@@ -514,7 +514,7 @@ for file in mix_loop_out/*.iqtree; do
 done
 ```
 
-# Plotting QC, QD, QI, Branch Lengths (Quartet Sampling)
+# Plotting QC, QD, QI, Branch Lengths (Quartet Sampling); run GLM and GAM models
 
 ```bash
 
