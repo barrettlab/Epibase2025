@@ -139,7 +139,7 @@ for f1 in *_R1.fastq.gz
         f2=${f1%%_R1.fastq.gz}"_R2.fastq.gz"
         fastp -i $f1 -I $f2 -w 16 --trim_poly_g --trim_poly_x -l 25 --cut_right -o "../fastp_polyg/fastp-$f1" -O "../fastp_polyg/fastp-$f2"
 	done
-
+```
 
 # Captus
 ```bash
