@@ -1144,3 +1144,91 @@ p4 <- p3 +
                  size = 3)
 p4
 ```
+
+
+## Searches based on 3 constraints: wastral (coalescent), zhang2023, and PE2024
+
+```bash 
+iqtree2 -s filtered_prank_concat.phy -m GTR+F+R7 -g st_nolpp_nobl.tre --prefix wastral_constraint -T 45 ; 
+iqtree2 -s filtered_prank_concat.phy -m GTR+F+R7 -g zhang23_constraint_tree.tre --prefix zhang23_constraint -T 45 ; 
+iqtree2 -s filtered_prank_concat.phy -m GTR+F+R7 -g pe24_constraint_tree.tre --prefix pe24_constraint -T 45 ;
+```
+
+## Concatenate output trees
+```bash
+cat unconstrained_concat.treefile wastral_constraint.treefile zhang23_constraint.treefile pe24_constraint.treefile > allconstraints.tre
+```
+
+## Run tests
+```bash
+ iqtree2 -s filtered_prank_concat.phy -m GTR+F+R7 -z allconstraints.tre -n 0 -zb 1000 -au -T 55 --prefix allconstraints
+
+See allconstraints.trees for trees with branch lengths.
+
+Tree      logL    deltaL  bp-RELL    p-KH     p-SH       c-ELW       p-AU
+-------------------------------------------------------------------------
+  1 -1736917.597       0   0.901 +  0.914 +      1 +       0.9 +    0.955 + 
+  2 -1736999.485  81.888  0.0009 - 0.00145 - 0.00595 -  0.000882 -  0.00381 - 
+  3 -1736985.653  68.056  0.0155 - 0.0171 - 0.0292 -    0.0156 -    0.024 - 
+  4 -1736937.312  19.715  0.0826 + 0.0857 +  0.418 +    0.0835 +   0.0942 + 
+
+deltaL  : logL difference from the maximal logl in the set.
+bp-RELL : bootstrap proportion using RELL method (Kishino et al. 1990).
+p-KH    : p-value of one sided Kishino-Hasegawa test (1989).
+p-SH    : p-value of Shimodaira-Hasegawa test (2000).
+c-ELW   : Expected Likelihood Weight (Strimmer & Rambaut 2002).
+p-AU    : p-value of approximately unbiased (AU) test (Shimodaira, 2002).
+
+1 unconstrained concatenated
+2 wastral A353 coalescent
+3 Zhang 2023 transcriptomes coalescent
+4 Perez-Escobar A353 coalescent 
+
+```
+
+## Calculate RF distances among all trees
+```bash
+iqtree2 -rf_all allconstraints.tre --prefix rf_distances
+
+###   4 4
+###   Tree0       0 8 8 4		# unconstrained concatenated
+###   Tree1       8 0 10 10		# wastral A353 coalescent
+###   Tree2       8 10 0 8		# Zhang 2023 transcriptomes coalescent 
+###   Tree3       4 10 8 0		# Perez-Escobar A353 coalescent
+```
+
+## Plot R-F distances using MDS in R-F
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+
+# Define the Robinson-Foulds distance matrix
+rf_matrix <- matrix(c(
+  0,  8,  8,  4,
+  8,  0, 10, 10,
+  8, 10,  0,  8,
+  4, 10,  8,  0
+), nrow=4, byrow=TRUE)
+
+# Define tree names
+tree_names <- c("Unconstrained Concatenated", "wASTRAL A353 Coalescent", 
+                "Zhang 2023 Transcriptomes Coalescent", "Perez-Escobar A353 Coalescent")
+
+# Perform classical MDS (Multidimensional Scaling)
+mds <- cmdscale(rf_matrix, k=2)  # k=2 for two-dimensional scaling
+
+# Convert to dataframe for plotting
+mds_df <- as.data.frame(mds)
+mds_df$Tree <- tree_names  # Add tree names as a column
+
+# Create MDS plot using ggplot2
+ggplot(mds_df, aes(x=V1, y=V2, label=Tree)) +
+  geom_point(size=4, color="blue") +  # Add points
+  geom_text(vjust=-0.5, hjust=0.5, size=4) +  # Add tree labels
+  theme_minimal() +
+  labs(title="MDS Plot of Robinson-Foulds Distances",
+       x="MDS Dimension 1", 
+       y="MDS Dimension 2")
+```
+
