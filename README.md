@@ -1232,4 +1232,61 @@ ggplot(mds_df, aes(x=V1, y=V2, label=Tree)) +
        x="MDS Dimension 1", 
        y="MDS Dimension 2")
 ```
+## Plot gene tree representation on species tree estimate in Read
 
+```{r}
+# Load required libraries
+library(ape)
+library(ggtree)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(patchwork)
+
+# Read the species tree
+species_tree <- read.tree("st.tre")
+
+# Read the gene trees
+gene_trees <- read.tree("gts.tre")
+
+# Count how many times each taxon appears across all gene trees
+taxon_counts <- table(unlist(lapply(gene_trees, function(tree) tree$tip.label)))
+
+# Convert taxon counts into a dataframe for plotting
+taxon_data <- data.frame(
+  taxon = names(taxon_counts),
+  count = as.numeric(taxon_counts)
+)
+
+# Ensure taxa in species tree are included, filling missing ones with 0
+taxon_data <- taxon_data %>%
+  right_join(data.frame(taxon = species_tree$tip.label), by = "taxon") %>%
+  tidyr::replace_na(list(count = 0))
+
+# Plot species tree with extra space for bars
+p_tree <- ggtree(species_tree) + 
+  geom_tiplab(size = 3, align = TRUE, linetype = "dotted") +  # Align labels with dotted guide lines
+  xlim(0, max(taxon_data$count) + 5)  # Extend x-axis to make space for bars
+
+# Extract tree data to get y-axis positions for taxa
+tree_data <- p_tree$data
+
+# Merge taxon count data with tree node positions
+taxon_data$y <- match(taxon_data$taxon, tree_data$label)  # Match taxon names to tree y-positions
+
+# Define an offset value to shift the bars right
+offset <- max(tree_data$x) + 2  # Shift bars to the right
+
+# Create bar plot of missing data (shifted right)
+p_bars <- ggplot(taxon_data, aes(x = count + offset, y = factor(y, levels = rev(y)))) +  
+  geom_bar(stat = "identity", fill = "blue") +
+  labs(x = "Gene Tree Count", y = NULL) +  
+  theme_minimal() +
+  theme(axis.text.y = element_blank(),  # Hide y-axis labels (tree already has them)
+        axis.ticks.y = element_blank(),
+        panel.grid.major.y = element_blank()) +
+  xlim(offset, offset + max(taxon_data$count) + 2)  # Ensure bars fit in allocated space
+
+# Combine tree and bar plots side-by-side
+p_tree + p_bars + plot_layout(widths = c(2, 1))  # Adjust layout widths
+```
