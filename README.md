@@ -1232,7 +1232,7 @@ ggplot(mds_df, aes(x=V1, y=V2, label=Tree)) +
        x="MDS Dimension 1", 
        y="MDS Dimension 2")
 ```
-## Plot gene tree representation on species tree estimate in Read
+## Plot gene tree representation on species tree estimate in R
 
 ```{r}
 # Load required libraries
