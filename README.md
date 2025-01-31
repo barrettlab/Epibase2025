@@ -1187,6 +1187,18 @@ p-AU    : p-value of approximately unbiased (AU) test (Shimodaira, 2002).
 
 ```
 
+## Use quartet scores for constraint trees/gene trees in ASTRAL v.5.7.8
+
+```bash
+# Quartet scores among constraint trees in astral v.5.7.8
+mkdir test_data
+
+java -jar /usr/local/src/ASTRAL/astral.5.7.8.jar -i gts.tre -q unconstrained_concat.treefile  -o test_data/unconstrained-scored.tre  2> test_data/unconstrained-scored.log
+java -jar /usr/local/src/ASTRAL/astral.5.7.8.jar -i gts.tre -q wastral_constraint.treefile    -o test_data/wastral-scored.tre  2> test_data/wastral-scored.log
+java -jar /usr/local/src/ASTRAL/astral.5.7.8.jar -i gts.tre -q zhang23_constraint.treefile    -o test_data/zhang23-scored.tre  2> test_data/zhang23-scored.log
+java -jar /usr/local/src/ASTRAL/astral.5.7.8.jar -i gts.tre -q pe24_constraint.treefile       -o test_data/pe24-scored.tre  2> test_data/pe24-scored.log
+```
+
 ## Calculate RF distances among all trees
 ```bash
 iqtree2 -rf_all allconstraints.tre --prefix rf_distances
