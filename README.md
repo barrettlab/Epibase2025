@@ -1210,7 +1210,7 @@ iqtree2 -rf_all allconstraints.tre --prefix rf_distances
 ###   Tree3       4 10 8 0		# Perez-Escobar A353 coalescent
 ```
 
-## Plot R-F distances using MDS in R-F
+## Plot R-F distances using MDS in R
 
 ```{r}
 # Load necessary libraries
