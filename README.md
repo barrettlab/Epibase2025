@@ -2,10 +2,12 @@
 ```bash
 Torvalds L, Hamano J. 2024. The Linux kernel. Version 6.8. Available from: https://kernel.org
 R Core Team. 2025. R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/.​
-ChaptGPT and Google Copilot were used for debugging and code development in Inix and R:
+ChaptGPT and Github Copilot were used for debugging and code development in Inix and R:
 OpenAI. (2025). ChatGPT 4o (April 8 version) [Large language model]. https://chat.openai.com
-Google. (2025). Google Copilot (April 8 version) [AI assistant]. https://copilot.google.com
 ```
+
+[Github Copilot](https://github.com/features/copilot?ef_id=_k_CjwKCAjwktO_BhBrEiwAV70jXs7vOsmIA9Wy5KM0DqvmR0kMfaYvsrDk3mYBan4xL4QmP4eD8pSiAhoCgbQQAvD_BwE_k_&OCID=AIDcmmb150vbv1_SEM__k_CjwKCAjwktO_BhBrEiwAV70jXs7vOsmIA9Wy5KM0DqvmR0kMfaYvsrDk3mYBan4xL4QmP4eD8pSiAhoCgbQQAvD_BwE_k_&gad_source=1&gclid=CjwKCAjwktO_BhBrEiwAV70jXs7vOsmIA9Wy5KM0DqvmR0kMfaYvsrDk3mYBan4xL4QmP4eD8pSiAhoCgbQQAvD_BwE)
+
 
 ### Download from SRA
 
