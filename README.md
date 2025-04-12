@@ -589,157 +589,76 @@ print(data)
 
 #######################
 
+# Plotting QC vs. QI, highlighting EDE monophyly and relationship nodes in plot
 
-# Replace NA values in QD with 0
-data <- data %>%
-  mutate(QD = ifelse(is.na(QD), 0, QD))
-
-# Reshape the data for faceting
-data_long <- data %>%
-  pivot_longer(cols = c(QC, QD, QI), names_to = "Metric", values_to = "Value")
-
-# Faceted plot with LOESS smoothing
-ggplot(data_long, aes(x = BranchLength, y = Value, color = Metric)) +
-  geom_point(alpha = 0.6) +
-  geom_smooth(method = "loess", se = TRUE) +  # Add confidence intervals
-  scale_color_manual(
-    values = c("QC" = "red", "QD" = "blue", "QI" = "orange"),
-    name = "Metric"
-  ) +
-  labs(
-    x = "Branch Length",
-    y = "Metric Value",
-    title = "Branch Length vs QC, QD, and QI with LOESS Smoothing"
-  ) +
-  facet_grid(Metric ~ ., scales = "free_y") +  # Vertical faceting
-  theme_minimal() +
-  theme(strip.text.y = element_text(angle = 0))  # Horizontal facet labels
-
-
-
-
-#########################
-
-
-# With highlighting of EDE tribe monophyly and relationships among tribes
-
-library(ape)
-library(dplyr)
-library(tidyr)
 library(ggplot2)
+library(dplyr)
+library(ggrepel)
 
-# Load the Newick file containing the four trees
-trees <- read.tree("annotated_qs.tre")
+# Define special node groups
+red_nodes <- c(208:214, 221:222, 316)
+blue_nodes <- c(215, 305, 307, 317, 320, 325, 328)
 
-# Extract the trees in order
-phylo_tree <- trees[[1]]  # Phylogram with branch lengths
-qc_tree <- trees[[2]]     # QC tree
-qd_tree <- trees[[3]]     # QD tree
-qi_tree <- trees[[4]]     # QI tree
-
-# Helper function to extract internal node metadata
-extract_internal_metadata <- function(tree, label_prefix) {
-  internal_nodes <- (Ntip(tree) + 1):max(tree$edge[, 2])
-  metadata <- sapply(tree$node.label, function(label) {
-    if (!is.na(label) && grepl(paste0(label_prefix, "="), label)) {
-      as.numeric(sub(paste0(".*", label_prefix, "="), "", label))
-    } else {
-      NA
-    }
-  })
-  metadata[internal_nodes - Ntip(tree)]
-}
-
-# Extract internal branch lengths from the phylogram
-internal_nodes <- (Ntip(phylo_tree) + 1):max(phylo_tree$edge[, 2])
-branch_lengths <- phylo_tree$edge.length[match(internal_nodes, phylo_tree$edge[, 2])]
-
-# Extract QC, QD, and QI values
-qc_values <- extract_internal_metadata(qc_tree, "qc")
-qd_values <- extract_internal_metadata(qd_tree, "qd")
-qi_values <- extract_internal_metadata(qi_tree, "qi")
-
-# Combine into a data frame
-data <- data.frame(
-  NodeID = internal_nodes,
-  BranchLength = branch_lengths,
-  QC = qc_values,
-  QD = qd_values,
-  QI = qi_values
-)
-
-# Replace NA values in QD with 0
-data <- data %>%
-  mutate(QD = ifelse(is.na(QD), 0, QD))
-
-# Add a highlight group column
-highlight_relationships <- 201:208
-highlight_ede <- c(292, 294, 300, 309, 310, 315, 318, 321)
-
+# Prepare the data
 data <- data %>%
   mutate(
-    HighlightGroup = case_when(
-      NodeID %in% highlight_ede ~ "EDE Tribe Monophyly",
-      NodeID %in% highlight_relationships ~ "EDE Tribe Relationships",
-      TRUE ~ "Other"
-    ),
-    Shape = case_when(
-      HighlightGroup == "EDE Tribe Monophyly" ~ "triangle",
-      HighlightGroup == "EDE Tribe Relationships" ~ "square",
-      TRUE ~ "circle"
+    qi = as.numeric(as.character(qi)),
+    qc = as.numeric(as.character(qc)),
+    group = case_when(
+      node %in% red_nodes ~ "red_square",
+      node %in% blue_nodes ~ "blue_triangle",
+      TRUE ~ "gray_circle"
     )
   )
 
-# Reshape the data for faceting
-data_long <- data %>%
-  pivot_longer(cols = c(QC, QD, QI), names_to = "Metric", values_to = "Value")
+# Plot
+ggplot(data, aes(x = qi, y = qc)) +
+  # LOESS smoothing curve with CI ribbon
+  geom_smooth(method = "loess", color = "black", fill = "lightgray",
+              linewidth = 1, alpha = 0.4, se = TRUE) +
+  
+  # Plot points with different shapes/fills
+  geom_point(aes(shape = group, fill = group),
+             size = 3.5, stroke = 0.3, color = "black", alpha = 0.9) +
+  
+  # Add non-overlapping node labels for red/blue points
+  geom_text_repel(data = data %>% filter(group != "gray_circle"),
+                  aes(label = node),
+                  size = 3.5,
+                  fontface = "bold",
+                  max.overlaps = Inf,
+                  min.segment.length = 0,
+                  segment.color = "gray50",
+                  segment.size = 0.3,
+                  box.padding = 0.3,
+                  point.padding = 0.2) +
+  
+  # Manual shape and fill definitions
+  scale_shape_manual(values = c(
+    gray_circle = 21,
+    red_square = 22,
+    blue_triangle = 24
+  )) +
+  scale_fill_manual(values = c(
+    gray_circle = "gray60",
+    red_square = "red",
+    blue_triangle = "blue"
+  )) +
+  
+  # Axis styling
+  scale_x_continuous(name = "qi", breaks = scales::pretty_breaks(n = 6),
+                     expand = expansion(mult = 0.05)) +
+  scale_y_continuous(name = "qc", breaks = scales::pretty_breaks(n = 6),
+                     expand = expansion(mult = 0.05)) +
 
-# Separate data for layering
-highlight_data <- data_long %>%
-  filter(HighlightGroup != "Other")
-
-non_highlight_data <- data_long %>%
-  filter(HighlightGroup == "Other")
-
-# Faceted plot with LOESS smoothing and highlights layered on top
-ggplot() +
-  geom_point(
-    data = non_highlight_data,
-    aes(x = BranchLength, y = Value, color = Metric),
-    shape = 21, fill = "gray", size = 3, alpha = 0.6
-  ) +
-  geom_smooth(
-    data = data_long,
-    aes(x = BranchLength, y = Value, color = Metric),
-    method = "loess", se = TRUE
-  ) +
-  geom_point(
-    data = highlight_data,
-    aes(x = BranchLength, y = Value, shape = Shape, fill = HighlightGroup),
-    size = 3, alpha = 0.5
-  ) +
-  scale_color_manual(
-    values = c("QC" = "red", "QD" = "blue", "QI" = "orange"),
-    name = "Metric"
-  ) +
-  scale_shape_manual(
-    values = c(circle = 21, triangle = 24, square = 22),
-    name = "Node Type"
-  ) +
-  scale_fill_manual(
-    values = c("EDE Tribe Monophyly" = "black", "EDE Tribe Relationships" = "black"),
-    name = "Highlight Group"
-  ) +
-  labs(
-    x = "Branch Length",
-    y = "Metric Value",
-    title = "Branch Length vs QC, QD, and QI with LOESS Smoothing"
-  ) +
-  facet_grid(Metric ~ ., scales = "free_y") +  # Vertical faceting
-  theme_minimal() +
+  # Theme tweaks
+  theme_minimal(base_size = 14) +
   theme(
-    strip.text.y = element_text(angle = 0),
-    legend.position = "top"
+    axis.text = element_text(color = "black"),
+    panel.grid.major = element_line(color = "gray90", linewidth = 0.4),
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(10, 10, 10, 10),
+    legend.position = "none"
   )
 
 ##################################
@@ -771,88 +690,9 @@ ggplot(data_long, aes(x = HighlightGroupCombined, y = BranchLength, fill = Highl
     coord_flip()  # Force horizontal orientation
 
 
+##################################################
 
 
-
-# Filter the data for highlighted nodes
-highlighted_data <- data %>%
-  filter(NodeID %in% highlight_nodes)
-
-# Unfiltered nodes (all nodes)
-all_correlations <- data.frame(
-  Comparison = c("BranchLength vs QC", "BranchLength vs QD", "BranchLength vs QI",
-                 "QC vs QD", "QC vs QI", "QD vs QI"),
-  Spearman_Correlation = c(
-    cor(data$BranchLength, data$QC, method = "spearman", use = "complete.obs"),
-    cor(data$BranchLength, data$QD, method = "spearman", use = "complete.obs"),
-    cor(data$BranchLength, data$QI, method = "spearman", use = "complete.obs"),
-    cor(data$QC, data$QD, method = "spearman", use = "complete.obs"),
-    cor(data$QC, data$QI, method = "spearman", use = "complete.obs"),
-    cor(data$QD, data$QI, method = "spearman", use = "complete.obs")
-  ),
-  p_value = c(
-    cor.test(data$BranchLength, data$QC, method = "spearman", exact = FALSE)$p.value,
-    cor.test(data$BranchLength, data$QD, method = "spearman", exact = FALSE)$p.value,
-    cor.test(data$BranchLength, data$QI, method = "spearman", exact = FALSE)$p.value,
-    cor.test(data$QC, data$QD, method = "spearman", exact = FALSE)$p.value,
-    cor.test(data$QC, data$QI, method = "spearman", exact = FALSE)$p.value,
-    cor.test(data$QD, data$QI, method = "spearman", exact = FALSE)$p.value
-  )
-)
-
-# Highlighted nodes (filtered)
-highlighted_data <- data %>%
-  filter(NodeID %in% highlight_nodes)
-
-highlighted_correlations <- data.frame(
-  Comparison = c("BranchLength vs QC", "BranchLength vs QD", "BranchLength vs QI",
-                 "QC vs QD", "QC vs QI", "QD vs QI"),
-  Spearman_Correlation = c(
-    cor(highlighted_data$BranchLength, highlighted_data$QC, method = "spearman", use = "complete.obs"),
-    cor(highlighted_data$BranchLength, highlighted_data$QD, method = "spearman", use = "complete.obs"),
-    cor(highlighted_data$BranchLength, highlighted_data$QI, method = "spearman", use = "complete.obs"),
-    cor(highlighted_data$QC, highlighted_data$QD, method = "spearman", use = "complete.obs"),
-    cor(highlighted_data$QC, highlighted_data$QI, method = "spearman", use = "complete.obs"),
-    cor(highlighted_data$QD, highlighted_data$QI, method = "spearman", use = "complete.obs")
-  ),
-  p_value = c(
-    cor.test(highlighted_data$BranchLength, highlighted_data$QC, method = "spearman", exact = FALSE)$p.value,
-    cor.test(highlighted_data$BranchLength, highlighted_data$QD, method = "spearman", exact = FALSE)$p.value,
-    cor.test(highlighted_data$BranchLength, highlighted_data$QI, method = "spearman", exact = FALSE)$p.value,
-    cor.test(highlighted_data$QC, highlighted_data$QD, method = "spearman", exact = FALSE)$p.value,
-    cor.test(highlighted_data$QC, highlighted_data$QI, method = "spearman", exact = FALSE)$p.value,
-    cor.test(highlighted_data$QD, highlighted_data$QI, method = "spearman", exact = FALSE)$p.value
-  )
-)
-
-# Print results for all nodes
-cat("\nSpearman Correlations for All Nodes:\n")
-print(all_correlations)
-
-# Print results for highlighted nodes
-cat("\nSpearman Correlations for Highlighted Nodes:\n")
-print(highlighted_correlations)
-
-
-# Spearman Correlations for All Nodes:
-# > print(all_correlations)
-#           Comparison Spearman_Correlation      p_value
-# 1 BranchLength vs QC           0.02945751 6.850380e-01
-# 2 BranchLength vs QD          -0.02876121 6.913305e-01
-# 3 BranchLength vs QI           0.02244342 7.573265e-01
-# 4           QC vs QD          -0.67320861 1.057110e-26
-# 5           QC vs QI           0.82724916 1.857898e-49
-# 6           QD vs QI          -0.71842307 8.965957e-32
-# 
-# Spearman Correlations for Highlighted Nodes:
-# > print(highlighted_correlations)
-#           Comparison Spearman_Correlation      p_value
-# 1 BranchLength vs QC          -0.09407357 0.7289369668
-# 2 BranchLength vs QD           0.10739658 0.6921879703
-# 3 BranchLength vs QI          -0.08961112 0.7413750020
-# 4           QC vs QD          -0.70873226 0.0021157460
-# 5           QC vs QI           0.84703271 0.0000347194
-# 6           QD vs QI          -0.66877858 0.0046165733
 
 ## Generalized linear model incorporating BranchLength interactions w QD and QC
 # Convert HighlightGroup to a dummy variable
