@@ -12,7 +12,7 @@ OpenAI. (2025). ChatGPT 4o (April 8 version) [Large language model]. https://cha
 ### Download from SRA
 
 ```bash
-conda activate /usr/local/src/conda_envs_binf
+conda activate /usr/local/src/conda_envs/binf
 
 # Download with prefetch
 cat sra_list.txt | xargs -n 1 -P 92 prefetch
@@ -152,9 +152,12 @@ for f1 in *_R1.fastq.gz
 	done
 ```
 
-# FastQC
+# FastQC/MultiQC
 
 ```bash
+
+conda activate /usr/local/src/conda_envs/
+
 # Define input and output directories
 dirs=("reads" "fastp_polyg")
 for dir in "${dirs[@]}"; do
