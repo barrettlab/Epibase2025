@@ -152,6 +152,26 @@ for f1 in *_R1.fastq.gz
 	done
 ```
 
+# FastQC
+
+```bash
+# Define input and output directories
+dirs=("reads" "fastp_polyg")
+for dir in "${dirs[@]}"; do
+    # Create output directory
+    outdir="fastqc_${dir}"
+    mkdir -p "$outdir"
+
+    # Run FastQC on all .fastq.gz files in the directory
+    fastqc "${dir}"/*.fastq.gz -o "$outdir" --threads 8
+done
+
+# Run MultiQC on each FastQC output folder
+for dir in "${dirs[@]}"; do
+    multiqc "fastqc_${dir}" -o "fastqc_${dir}"
+done
+```
+
 # Captus
 ```bash
 conda activate /home/cfb0001/.local/share/mamba/envs/captus
