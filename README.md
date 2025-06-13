@@ -156,7 +156,7 @@ for f1 in *_R1.fastq.gz
 
 ```bash
 
-conda activate /usr/local/src/conda_envs/
+conda activate /usr/local/src/conda_envs/fastqc
 
 # Define input and output directories
 dirs=("reads" "fastp_polyg")
